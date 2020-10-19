@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Button, Image, Alert, Modal, TouchableHighlight, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, Button, Image, Alert, Modal, TouchableHighlight, ActivityIndicator, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Permissions from 'expo-permissions';
 
@@ -146,26 +146,29 @@ export default function App() {
             <Image style={styles.image} source={{ uri: pickedImage }} />
           )}
       </View>
+
+
+
+      <TouchableOpacity onPress={() => { takeImageHandler() }}>
+        <Image style={styles.button1} source={require("./assets/photo-camera.png")} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => { submitImage() }}>
+        <Image style={styles.button1} source={require("./assets/right-arrow.png")} />
+      </TouchableOpacity>
+
       <View style={{ justifyContent: "center", alignItems: "center" }}>
         {isLoading && <ActivityIndicator color={"#000"} />}
       </View>
-      <Button
-        title="Take Image"
-        color="blue"
-        onPress={takeImageHandler}
-      />
-
-      <Button
-        title="Submit"
-        color="green"
-        onPress={submitImage}
-      />
 
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  buton1: {
+    height: 10,
+    width: 10
+  },
   imagePreview: {
     width: '100%',
     height: 200,
