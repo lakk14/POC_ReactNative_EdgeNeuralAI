@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Button, Image, Alert, Modal, TouchableHighlight, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, Alert, Modal, TouchableHighlight, ActivityIndicator, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Permissions from 'expo-permissions';
 
@@ -79,10 +79,11 @@ export default function App() {
           } else {
             setStatusMsg('Not Found');
             setEmpId('-');
-            setName('-')
+            setName('-');
             setPickedImage();
             setImageIcon(false);
             setIsLoading(false);
+            setBorderColor(false);
             setModalVisible(true);
           }
 
@@ -116,12 +117,14 @@ export default function App() {
               <Image style={styles.imageIcon} source={require('./assets/check.png')} />
             )}
 
-          {!borderColor ? (
-            <View style={{ ...styles.ImageModal, borderColor: '#FF0000' }}>
+          {borderColor ? (
+            <View style={{ ...styles.ImageModal, borderColor: '#008000' }}>
               <Image style={styles.image} source={{ uri: pickedImage }} />
             </View>
           ) : (
-              <View style={{ ...styles.ImageModal, borderColor: '#008000' }}>
+              <View style={{
+                ...styles.ImageModal, borderColor: '#FF0000'
+              }}>
                 <Image style={styles.image} source={{ uri: pickedImage }} />
               </View>
             )}
