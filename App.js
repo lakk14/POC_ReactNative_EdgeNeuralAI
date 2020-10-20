@@ -41,7 +41,7 @@ export default function App() {
       return;
     }
     const image = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
+      allowsEditing: false,
       aspect: [16, 9],
       quality: 0.3 //ranges between 0-1 
     });
