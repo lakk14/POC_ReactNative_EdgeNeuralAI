@@ -20,6 +20,7 @@ export default function App() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const [borderColor, setBorderColor] = useState(false);
 
 
 
@@ -46,13 +47,9 @@ export default function App() {
     });
     setPickedImage(image.uri);
 
-
-
-
   };
 
   const submitImage = async () => {
-    const imageresponse = await fetch(pickedImage)
 
     const data = new FormData();
 
@@ -77,6 +74,7 @@ export default function App() {
             setStatusMsg('Found');
             setImageIcon(true);
             setIsLoading(false);
+            setBorderColor(true);
             setModalVisible(true);
           } else {
             setStatusMsg('Not Found');
@@ -118,9 +116,16 @@ export default function App() {
               <Image style={styles.imageIcon} source={require('./assets/check.png')} />
             )}
 
-          <View style={styles.ImageModal}>
-            <Image style={styles.image} source={{ uri: pickedImage }} />
-          </View>
+          {!borderColor ? (
+            <View style={{ ...styles.ImageModal, borderColor: '#FF0000' }}>
+              <Image style={styles.image} source={{ uri: pickedImage }} />
+            </View>
+          ) : (
+              <View style={{ ...styles.ImageModal, borderColor: '#008000' }}>
+                <Image style={styles.image} source={{ uri: pickedImage }} />
+              </View>
+            )}
+
 
           <Text style={styles.modalText}>Employee ID: {empId}</Text>
           <Text style={styles.modalText}>Name: {name}</Text>
@@ -148,17 +153,29 @@ export default function App() {
       </View>
 
 
-
-      <TouchableOpacity onPress={() => { takeImageHandler() }}>
-        <Image style={styles.button1} source={require("./assets/photo-camera.png")} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => { submitImage() }}>
-        <Image style={styles.button1} source={require("./assets/right-arrow.png")} />
-      </TouchableOpacity>
-
-      <View style={{ justifyContent: "center", alignItems: "center" }}>
-        {isLoading && <ActivityIndicator color={"#000"} />}
+      <View style={{ flexDirection: 'row', flex: 1, marginTop: 10 }} >
+        <View >
+          <TouchableOpacity onPress={() => { takeImageHandler() }}>
+            <Image style={{ marginRight: 50 }} source={require("./assets/photo-camera.png")} />
+          </TouchableOpacity>
+        </View>
+        <View >
+          {!pickedImage ? (
+            <TouchableOpacity>
+              <Image style={styles.button1} source={require("./assets/right-arrow.png")} />
+            </TouchableOpacity>
+          ) : (
+              <TouchableOpacity onPress={() => { submitImage() }}>
+                <Image style={styles.button1} source={require("./assets/right-arrow.png")} />
+              </TouchableOpacity>
+            )}
+        </View>
+        <View style={{ justifyContent: "center", alignItems: "center" }}>
+          {isLoading && <ActivityIndicator color={"#000"} />}
+        </View>
       </View>
+
+
 
     </View>
   );
@@ -179,13 +196,16 @@ const styles = StyleSheet.create({
   },
   imageIcon: {
     width: 100,
-    height: 100
+    height: 100,
+    marginBottom: 20
   },
   image: {
     width: '100%',
-    height: '100%'
+    height: '100%',
+    marginBottom: 10
   },
   container: {
+    paddingTop: '50%',
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
@@ -219,7 +239,9 @@ const styles = StyleSheet.create({
   },
   ImageModal: {
     height: "50%",
-    width: "100%"
+    width: "100%",
+    marginBottom: 10,
+    borderWidth: 4
   },
   modalText: {
     marginBottom: 15,
