@@ -247,7 +247,7 @@ export default function App() {
             )}
 
           <TouchableHighlight
-            style={{ ...styles.openButton, backgroundColor: "#2196F3" }}
+            style={{ ...styles.openButton, backgroundColor: "#2196F3",marginTop:'20%' }}
             onPress={() => {
               setModalVisible(!modalVisible);
               setPickedImage();
