@@ -4,54 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as Permissions from 'expo-permissions';
 
-//create component instead function 
 export default function App() {
-
-
-  //Add import { withNavigation } from 'react-navigation';
-
-
-  // static navigationOptions = ({navigation}) => {
-  // 	const { params = {} } = navigation.state;
-  // 	return{
-  // 		title: "FaceRec",
-  // 		headerStyle: {
-  // 		  backgroundColor: '#0177bc'
-  // 		},
-  // 		headerTitleStyle: {
-  // 			fontSize: 18
-  // 		},
-  // 		headerTintColor: '#fff',
-  // 		headerLeft: () => null,
-  // 		headerRight: () => (
-  // 			<Icon
-  // 				name='power-off'
-  // 				type="font-awesome"
-  // 				onPress={() => params.logout() }
-  // 				size={25}
-  // 				color = '#fff'
-  // 				underlayColor= '#0177bc'
-  // 				iconStyle={{ padding: 15 }}
-  // 			/>
-  // 		)
-  // 	}
-  // }
-
-
-  // _logout = async() => {
-  // 		await AsyncStorage.removeItem('isLoggedIn');
-  // 		this.props.navigation.navigate('Auth');
-  // }
-  // componentDidMount() {
-  // 	const { navigation } = this.props
-  // 	navigation.setParams({
-  // 		logout: this._logout
-  // 	})
-  // }
-
-
-
-
 
   const [pickedImage, setPickedImage] = useState();
 
@@ -63,16 +16,12 @@ export default function App() {
 
   const [statusMsg, setStatusMsg] = useState();
 
-  const [cLocation, setClocation] = useState();
-
   const [imageIcon, setImageIcon] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
   const [borderColor, setBorderColor] = useState(false);
 
-
-  //remove this fn
   const verifyPermissions = async () => {
     const result = await Permissions.askAsync(Permissions.CAMERA, Permissions.CAMERA_ROLL);
     if (result.status !== 'granted') {
@@ -84,9 +33,9 @@ export default function App() {
     }
     return true;
   };
-  //remove fn
+
   const verifyLPermissions = async () => {
-    const result = await Permissions.askAsync(Permissions.CAMERA, Permissions.LOCATION);
+    const result = await Permissions.askAsync(Permissions.LOCATION);
     if (result.status !== 'granted') {
       Alert.alert('Insufficient permissions!',
         'You need to grant location permissions to use this app.',
@@ -110,26 +59,33 @@ export default function App() {
     setPickedImage(image.uri);
   };
 
-  const getLocation = async () => {
-    try {
-      const location = await Location.getCurrentPositionAsync({ timeInterval: 3000 });
-      setClocation(location);
-    }
-    catch (e) {
-      Alert.alert('Could not fectch location!', 'Please try again', [{ text: "Ok" }]);
-    }
+  const transaction = (data) => {
+    return new Promise(function (resolve, reject) {
+
+      let response = fetch('https://attendance.edgeneural.ai/payroll-attendance/api/public/index.php/api/transaction_new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json'
+        },
+        body: data,
+      }).then((response) => response.json())
+        .then((responseJson) => {
+          resolve(responseJson);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+
+    });
   }
 
-  const submitImage = async () => {
+  const faceRec = (data) => {
+    return new Promise(function (resolve, reject) {
 
-    getLocation();
-    console.log(cLocation);
-    const data = new FormData();
+      data.append('image', { uri: pickedImage, type: "image/jpg", name: "image" });
 
-    data.append('image', { uri: pickedImage, type: "image/jpg", name: "image" });
-    if (pickedImage != null) {
-      setIsLoading(true);
-      const res = await fetch('https://api.edgeneural.ai/recognize', {
+      let response = fetch('https://api.edgeneural.ai/recognize', {
         method: 'POST',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -138,102 +94,119 @@ export default function App() {
         body: data,
       }).then(
         response => response.json()
-      ).then(
-        success => {
-          if (success.status_code == 200) {
+      ).then((success) => {
+        resolve(success);
+      }).catch((error) => {
+        reject(error);
+      });
 
-            var imgCount = 0;
-            var empIds = '';
-            var names = '';
-            var coordinatesGreen = [];
-            var coordinatesRed = [];
+    });
+  }
 
-            success.prediction.map(key => {
-              if (key.confidence != null) {
-                if (key.confidence > 0.7) {
-                  if (empIds != '' && names != '') {
-                    empIds = empIds + ', ' + key.faceid.empId;
-                    names = names + ', ' + key.faceid.fname + ' ' + key.faceid.lname
-                  } else {
-                    empIds = empIds + key.faceid.empId;
-                    names = names + key.faceid.fname + ' ' + key.faceid.lname
-                  }
-                  imgCount++;
+  const submitImage = async () => {
 
-                  coordinatesGreen.push(key.face_coordinates);
-                }
+    if (pickedImage != null) {
+      setIsLoading(true);
+
+      const data = new FormData();
+
+      data.append('image', { uri: pickedImage, type: "image/jpg", name: "image" });
+
+      //Calling FaceRec API
+      var responseJson = await faceRec(data).catch((error) => {
+        console.log(responseJson);
+        console.log(error);
+        Alert.alert('FaceRec Failed :(', 'Please try again', [{ text: "Ok" }]);
+      });
+
+      if (responseJson != undefined && responseJson != null && responseJson['status_code'] == 200) {
+
+        var imgCount = 0;
+        var empIds = '';
+        var names = '';
+        var coordinatesGreen = [];
+        var coordinatesRed = [];
+
+        responseJson.prediction.map(key => {
+          if (key.confidence != null) {
+            if (key.confidence > 0.7) {
+              if (empIds != '' && names != '') {
+                empIds = empIds + ', ' + key.faceid.empId;
+                names = names + ', ' + key.faceid.fname + ' ' + key.faceid.lname
               } else {
-                imgCount = 0;
-                coordinatesRed.push(key.face_coordinates);
+                empIds = empIds + key.faceid.empId;
+                names = names + key.faceid.fname + ' ' + key.faceid.lname
               }
-            });
+              imgCount++;
 
-            if (imgCount >= 1) {
-
-              const hasLPermission = verifyLPermissions();
-              if (!hasLPermission) {
-                return;
-              }
-
-              let ts = new Date(cLocation.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-              data.append('trans', '{"txnId": 21, "dvcId": 14224190209830000603, "dvcIp": "127.0.0.1", "punchId": "2", "txnDateTime": "' + ts + '", "mode": "IN", "clientId": "2", "location": {"latitude": "' + cLocation.coords.latitude + '", "longitude":"' + cLocation.coords.longitude + '"}}');
-              console.log(data);
-              const locRes = fetch('https://attendance.edgeneural.ai/payroll-attendance/api/public/index.php/api/transaction_new', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'multipart/form-data',
-                  'Accept': 'application/json'
-                },
-                body: data,
-              }).then(
-                response => response.json()
-              ).then(
-                success => { console.log(success) }
-              ).catch(
-                error => console.log(error)
-              );
-
-              setEmpId(empIds);
-              setName(names);
-              setImageIcon(true);
-              setBorderColor(true);
-              setStatusMsg('Found');
-            } else {
-              setEmpId('-');
-              setName('-');
-              setBorderColor(false);
-              setImageIcon(false);
-              setStatusMsg('Not Found');
+              coordinatesGreen.push(key.face_coordinates);
             }
-            setIsLoading(false);
-            setModalVisible(true);
-
-          } else if (success.status_code == 104) {
-            setStatusMsg(success.error);
-            setEmpId('-');
-            setName('-');
-            setPickedImage();
-            setImageIcon(false);
-            setBorderColor(false);
-            setIsLoading(false);
-
-            setModalVisible(true);
           } else {
-            setStatusMsg("Something went wrong, try again!");
-            setEmpId('-');
-            setName('-');
-            setPickedImage();
-            setImageIcon(false);
-            setBorderColor(false);
-            setIsLoading(false);
-            setModalVisible(true);
+            imgCount = 0;
+            coordinatesRed.push(key.face_coordinates);
           }
+        });
+
+        if (imgCount >= 1) {
+          setEmpId(empIds);
+          setName(names);
+          setImageIcon(true);
+          setBorderColor(true);
+          setStatusMsg('Found');
+
+          //Checking Location Permission
+          const hasLPermission = verifyLPermissions();
+          if (!hasLPermission) {
+            return;
+          }
+
+          //Getting Location for transaction
+          try {
+            const location = await Location.getCurrentPositionAsync({ timeout: 5000 });
+
+            let ts = new Date(location.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
+
+            data.append('trans', '{"txnId": 21, "dvcId": 14224190209830000603, "dvcIp": "127.0.0.1", "punchId": "' + empId + '", "txnDateTime": "2020-07-10 09:38:18", "mode": "IN", "clientId": "2","location":{"lat":"' + location.coords.latitude + '","lng":"' + location.coords.longitude + '"}}');
+
+          }
+          catch (e) {
+            Alert.alert('Could not fectch location!', 'Please try again', [{ text: "Ok" }]);
+          }
+
+          //Calling Transaction API
+          var tresponseJson = await transaction(data).catch((error) => {
+            Alert.alert('Transaction Failed :(', 'Please try again', [{ text: "Ok" }]);
+          });
+
+        } else {
+          setEmpId('-');
+          setName('-');
+          setBorderColor(false);
+          setImageIcon(false);
+          setStatusMsg('Not Found');
         }
 
-      ).catch(
-        error => console.log(error)
-      );
+        setIsLoading(false);
+        setModalVisible(true);
+      } else if (responseJson != undefined && responseJson != null && responseJson['status_code'] == 104) {
+        setStatusMsg(responseJson['error']);
+        setEmpId('-');
+        setName('-');
+        setPickedImage();
+        setImageIcon(false);
+        setBorderColor(false);
+        setIsLoading(false);
+        setModalVisible(true);
+      } else {
+        setStatusMsg("Something went wrong, try again!");
+        setEmpId('-');
+        setName('-');
+        setPickedImage();
+        setImageIcon(false);
+        setBorderColor(false);
+        setIsLoading(false);
+        setModalVisible(true);
+      }
 
     } else {
       alert('Please Select File first');
@@ -323,9 +296,6 @@ export default function App() {
   );
 }
 
-//refer container style from enrollment
-
-//container and container1 from login
 const styles = StyleSheet.create({
   buton1: {
     height: 10,
