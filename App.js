@@ -83,8 +83,6 @@ export default function App() {
   const faceRec = (data) => {
     return new Promise(function (resolve, reject) {
 
-      data.append('image', { uri: pickedImage, type: "image/jpg", name: "image" });
-
       let response = fetch('https://api.edgeneural.ai/recognize', {
         method: 'POST',
         headers: {
@@ -110,7 +108,7 @@ export default function App() {
 
       const data = new FormData();
 
-      data.append('image', { uri: pickedImage, type: "image/jpg", name: "image" });
+      data.append('image', { uri: pickedImage, type: "image/jpg", name: "image.jpg" });
 
       //Calling FaceRec API
       var responseJson = await faceRec(data).catch((error) => {
@@ -163,14 +161,10 @@ export default function App() {
           //Getting Location for transaction
           try {
             const location = await Location.getCurrentPositionAsync({ timeout: 5000 });
-
-            let ts = new Date(location.timestamp).toISOString().replace(/T/, ' ').replace(/\..+/, '');
-
-            data.append('trans', '{"txnId": 21, "dvcId": 14224190209830000603, "dvcIp": "127.0.0.1", "punchId": "' + empId + '", "txnDateTime": "2020-07-10 09:38:18", "mode": "IN", "clientId": "2","location":{"lat":"' + location.coords.latitude + '","lng":"' + location.coords.longitude + '"}}');
-
-          }
-          catch (e) {
-            Alert.alert('Could not fectch location!', 'Please try again', [{ text: "Ok" }]);
+            let ts = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+            data.append('trans', '{"txnId": 21, "dvcId": 14224190209830000603, "dvcIp": "127.0.0.1", "punchId": "' + empId + '", "txnDateTime": "' + ts + '", "mode": "IN", "clientId": "2","location":{"lat":"' + location.coords.latitude + '","lng":"' + location.coords.longitude + '"}}');
+          } catch (error) {
+            Alert.alert('', 'Please try again', [{ text: "Ok" }]);
           }
 
           //Calling Transaction API
@@ -247,7 +241,7 @@ export default function App() {
             )}
 
           <TouchableHighlight
-            style={{ ...styles.openButton, backgroundColor: "#2196F3",marginTop:'20%' }}
+            style={{ ...styles.openButton, backgroundColor: "#2196F3", marginTop: '20%' }}
             onPress={() => {
               setModalVisible(!modalVisible);
               setPickedImage();
